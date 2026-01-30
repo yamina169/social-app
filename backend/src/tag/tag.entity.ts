@@ -10,7 +10,7 @@ export class TagEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true }) // prevent duplicate tag names
   name: string;
 
   @CreateDateColumn({ type: 'timestamp' })
