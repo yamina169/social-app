@@ -1,18 +1,26 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { UserModule } from '@/user/user.module';
-import config from './ormconfig'; // your TypeORM config file
+import { AppDataSource } from './ormconfig';
+import { TagModule } from './tag/tag.module';
+import { UserModule } from './user/user.module';
+import { ArticleModule } from './article/article.module';
+import { ProfileModule } from './profile/profile.module';
+import { CommentModule } from './comment/comment.module';
+import { FilesModule } from './files/files.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot(config), // connects to your DB
-    ConfigModule.forRoot({
-      isGlobal: true, // makes environment variables available globally
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRoot({
+      ...AppDataSource.options,
     }),
-    UserModule, // only keep UserModule
+    TagModule,
+    FilesModule,
+    UserModule,
+    ArticleModule,
+    ProfileModule,
+    CommentModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

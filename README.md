@@ -1,60 +1,142 @@
 # Social App
 
-## Description
+Welcome to the **Social App**, a **full-stack application** built with **React** for the frontend and **NestJS** for the backend, with **MinIO** for file storage.
 
-**Social App** is a **monolithic application** where users can **register, login, update profiles, search users, follow/unfollow, create posts, and comment**.
-The app is built using **NestJS** for the backend, **React** for the frontend, and includes **AI-powered features** for enhanced user experience.
+This app enables:
 
-This project was initially planned as a microservices architecture but was refactored into a **monolith** for simpler development and easier Dockerization on low-resource PCs.
+- User registration and authentication
+- Profile management
+- Article publishing and management
+- Tag interaction
+- Social features like following users and favoriting articles
+- File uploads with metadata (title, uploadedBy) stored in **MinIO**
 
-## Features
+---
 
-- User **authentication** (login/register)
-- **Profile management** (update profile, view profile)
-- **Follow/unfollow users**
-- **Create posts**
-- **Comment on posts**
-- **Search users**
-- **AI-powered features** (optional enhancements)
+## 🚀 Features
 
-## Getting Started
+- User registration and login
+- Article CRUD (Create, Read, Update, Delete)
+- Tag retrieval
+- Follow/unfollow users and retrieve profiles
+- Favorite/unfavorite articles
+- Feed of articles from followed users
+- File upload with metadata to **MinIO**
 
-### Backend with Docker
+---
 
-1. Build and run the backend and MongoDB:
+## 🔐 Authorization
 
-```bash
-docker-compose up --build
+Protected endpoints require a **valid JWT token** in the `Authorization` header:
+
+```
+Authorization: Bearer <your-jwt-token>
 ```
 
-2. Backend runs on: `http://localhost:3000`
+---
 
-### Frontend
+## ⚙️ Environment Variables
 
-1. Install dependencies:
+Create a `.env` file in the backend root directory:
+
+```env
+# App variables
+PORT=3000
+JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRES_IN=3600s
+
+# PostgreSQL (local development)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=blog
+
+# MinIO (local S3 storage)
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=files
+```
+
+> **Note:** Adjust database and MinIO variables to match your local setup.
+
+---
+
+## 📖 Backend Documentation
+
+Swagger UI is available at:
+
+```
+http://localhost:3000/api
+```
+
+Use it to explore backend endpoints, try requests, and inspect response schemas interactively.
+
+---
+
+## 🏁 Getting Started
+
+### Backend
+
+1. **Clone the repository**
 
 ```bash
-cd social-app-frontend
+git clone <repository-url>
+cd <repository-folder>/backend
+```
+
+2. **Install dependencies**
+
+```bash
 npm install
 ```
 
-2. Run the React app:
+3. **Configure environment**
+
+- Create a `.env` file as shown above
+- Ensure PostgreSQL is running locally
+- Ensure MinIO is running for file uploads:
+
+```bash
+docker-compose up -d minio
+```
+
+4. **Start the server**
+
+```bash
+npm run start:dev
+```
+
+---
+
+### Frontend
+
+1. **Navigate to frontend folder**
+
+```bash
+cd ../frontend
+```
+
+2. **Install dependencies**
+
+```bash
+npm install
+```
+
+3. **Start the frontend**
 
 ```bash
 npm start
 ```
 
-3. Frontend runs on: `http://localhost:3001` (or default React port)
+The React app will open in your browser (default `http://localhost:3000`) and communicate with the backend API.
 
-## Notes
+---
 
-- The project uses a **monolithic architecture** for easier development on low-resource machines.
-- All modules communicate internally using NestJS services.
-- Later, the app can be refactored into microservices if needed.
+## ⚡ Notes on File Uploads
 
-## Technologies
-
-- **Backend:** NestJS, MongoDB, Mongoose
-- **Frontend:** React, Axios (or fetch)
-- **DevOps:** Docker, Docker Compose
-- **Optional:** AI-powered features (e.g., content suggestions, moderation)
+- Supports **title** and **uploadedBy** metadata
+- Max file size: **5 MB**
+- Allowed types: images (`jpg`, `jpeg`, `png`, `gif`)
+- Files are stored in **MinIO**; metadata can be retrieved via API

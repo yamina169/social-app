@@ -1,0 +1,18 @@
+psql -U dev -d blog
+\pset pager off
+\dt
+
+
+
+
+# Générer une migration automatique avec toutes les entités :
+# npm run migration:generate -- src/migrations/NomMigration
+#
+# Créer une migration vide :
+# npm run migration:create -- src/migrations/NomMigration
+#
+# Appliquer toutes les migrations :
+# npm run migration:run
+#
+# Annuler la dernière migration :
+# npm run migration:revert
