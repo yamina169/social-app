@@ -21,12 +21,11 @@ services:
     ports:
       - "9000:9000" # API
       - "9001:9001" # Console UI
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
+    env_file:
+      - ./backend/.env # récupère MINIO_ROOT_USER et MINIO_ROOT_PASSWORD depuis .env
     volumes:
-      - minio-data:/data
+      - ./backend/minio_data:/data # stockage persistant dans backend/minio_data
 
   # Backend NestJS
   backend:
@@ -48,8 +47,7 @@ services:
     command: npm run start:dev
 
 volumes:
-  pgdata:
-  minio-data:
+  pgdata: {} # volume persistant pour PostgreSQL
 
 networks:
   social-network:

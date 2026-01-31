@@ -12,6 +12,12 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+
+
+# Ignore all files inside minio_data
+minio_data/*
+
+
 # OS
 .DS_Store
 

@@ -6,19 +6,19 @@ import { UserModule } from './user/user.module';
 import { ArticleModule } from './article/article.module';
 import { ProfileModule } from './profile/profile.module';
 import { CommentModule } from './comment/comment.module';
-import { FilesModule } from './files/files.module';
-
+import { MinioModule } from './minio/minio.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       ...AppDataSource.options,
     }),
-    FilesModule,
+
     UserModule,
     ArticleModule,
     ProfileModule,
     CommentModule,
+    MinioModule,
   ],
 })
 export class AppModule {}
