@@ -63,7 +63,6 @@ export class ArticleController {
     );
     return this.articleService.generateArticleResponse(newArticle);
   }
-
   @Get('feed')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get articles feed from followed users' })
@@ -72,23 +71,31 @@ export class ArticleController {
   @UseGuards(AuthGuard)
   async getUserFeed(
     @User('id') currentUserId: number,
-    @Query() query: any,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
   ): Promise<IArticlesResponse> {
+    // Pass the query params as object to the service
+    const query = { limit, offset };
     return await this.articleService.getFeed(currentUserId, query);
   }
 
   @Get()
   @ApiOperation({ summary: 'List all articles with optional filters' })
-  @ApiQuery({ name: 'tag', required: false })
-  @ApiQuery({ name: 'author', required: false })
-  @ApiQuery({ name: 'favorited', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'offset', required: false })
   async findAll(
     @User('id') currentUserId: number,
-    @Query() query: any,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('tag') tag?: string,
+    @Query('author') author?: string,
+    @Query('favorited') favorited?: string,
   ): Promise<IArticlesResponse> {
-    return this.articleService.findAll(currentUserId, query);
+    return this.articleService.findAll(currentUserId, {
+      limit,
+      offset,
+      tag,
+      author,
+      favorited,
+    });
   }
 
   @Get(':slug')

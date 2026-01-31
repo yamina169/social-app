@@ -21,113 +21,150 @@ export class ArticleService {
     @InjectRepository(FollowEntity)
     private readonly followRepository: Repository<FollowEntity>,
   ) {}
-
   async findAll(currentUserId: number, query: any): Promise<IArticlesResponse> {
+    const { tag, author, favorited, limit, offset } = query;
+
     const queryBuilder = this.articleRepository
       .createQueryBuilder('articles')
       .leftJoinAndSelect('articles.author', 'author');
 
-    if (query.tag) {
+    // 🔎 Filter by tag
+    if (tag) {
       queryBuilder.andWhere('articles.tagList LIKE :tag', {
-        tag: `%${query.tag}%`,
+        tag: `%${tag}%`,
       });
     }
 
-    if (query.author) {
-      const author = await this.userRepository.findOne({
-        where: {
-          username: query.author,
-        },
+    // 👤 Filter by author
+    if (author) {
+      const authorEntity = await this.userRepository.findOne({
+        where: { username: author },
       });
-      if (author) {
-        queryBuilder.andWhere('articles.authorId = :id', {
-          id: author?.id,
-        });
-      } else {
+
+      if (!authorEntity) {
         return { articles: [], articlesCount: 0 };
       }
+
+      queryBuilder.andWhere('articles.authorId = :id', {
+        id: authorEntity.id,
+      });
     }
 
-    if (query.favorited) {
-      const author = await this.userRepository.findOne({
-        where: {
-          username: query.favorited,
-        },
+    // ❤️ Filter by favorited
+    if (favorited) {
+      const user = await this.userRepository.findOne({
+        where: { username: favorited },
         relations: ['favorites'],
       });
-      if (!author || author.favorites.length === 0) {
+
+      if (!user || user.favorites.length === 0) {
         return { articles: [], articlesCount: 0 };
       }
 
-      const favoritesIds = author?.favorites.map((articles) => articles.id);
-
-      queryBuilder.andWhere('articles.id IN (:...ids)', { ids: favoritesIds });
+      const favoriteIds = user.favorites.map((article) => article.id);
+      queryBuilder.andWhere('articles.id IN (:...ids)', { ids: favoriteIds });
     }
 
     queryBuilder.orderBy('articles.createdAt', 'DESC');
+
+    // 📊 Count BEFORE pagination
     const articlesCount = await queryBuilder.getCount();
 
-    if (query.limit) {
-      queryBuilder.limit(query.limit);
+    // 🧮 Convert safely
+    const take = limit !== undefined ? Number(limit) : undefined;
+    const skip = offset !== undefined ? Number(offset) : undefined;
+
+    // ✅ Apply only if valid numbers
+    if (typeof take === 'number' && !isNaN(take)) {
+      queryBuilder.take(take);
     }
-    if (query.offset) {
-      queryBuilder.offset(query.offset);
+
+    if (typeof skip === 'number' && !isNaN(skip)) {
+      queryBuilder.skip(skip);
     }
 
     const articles = await queryBuilder.getMany();
 
+    // ⭐ Mark favorites for current user
     let userFavoritesIds: number[] = [];
 
     if (currentUserId) {
       const currentUser = await this.userRepository.findOne({
-        where: {
-          id: currentUserId,
-        },
+        where: { id: currentUserId },
         relations: ['favorites'],
       });
+
       userFavoritesIds = currentUser
         ? currentUser.favorites.map((article) => article.id)
         : [];
     }
 
-    const articlesWithFavorited = articles.map((article) => {
-      const favorited = userFavoritesIds.includes(article.id);
-      return { ...article, favorited };
-    });
+    const articlesWithFavorited = articles.map((article) => ({
+      ...article,
+      favorited: userFavoritesIds.includes(article.id),
+    }));
 
     return { articles: articlesWithFavorited, articlesCount };
   }
-
   async getFeed(currentUserId: number, query: any): Promise<IArticlesResponse> {
+    const { limit, offset } = query;
+
+    // 1️⃣ Find all users that the current user follows
     const follows = await this.followRepository.find({
       where: { followerId: currentUserId },
     });
-
-    const followingIds = follows.map((follow) => follow.followingId);
 
     if (!follows.length) {
       return { articles: [], articlesCount: 0 };
     }
 
+    const followingIds = follows.map((follow) => follow.followingId);
+
+    // 2️⃣ Build query for articles only from followed authors
     const queryBuilder = this.articleRepository
       .createQueryBuilder('articles')
-      .leftJoinAndSelect('articles.author', 'author');
+      .leftJoinAndSelect('articles.author', 'author')
+      .where('articles.authorId IN (:...followingIds)', { followingIds })
+      .orderBy('articles.createdAt', 'DESC');
 
-    queryBuilder.andWhere('articles.authorId IN (:...followingIds)', {
-      followingIds,
-    });
+    // 3️⃣ Get total count BEFORE pagination
     const articlesCount = await queryBuilder.getCount();
 
-    if (query.offset) {
-      queryBuilder.offset(query.offset);
+    // 4️⃣ Parse optional pagination params
+    const take = limit !== undefined ? Number(limit) : undefined;
+    const skip = offset !== undefined ? Number(offset) : undefined;
+
+    if (typeof take === 'number' && !isNaN(take)) {
+      queryBuilder.take(take);
     }
 
-    if (query.limit) {
-      queryBuilder.limit(query.limit);
+    if (typeof skip === 'number' && !isNaN(skip)) {
+      queryBuilder.skip(skip);
     }
+
+    // 5️⃣ Fetch articles
     const articles = await queryBuilder.getMany();
 
-    return { articles, articlesCount };
+    // 6️⃣ Mark which articles are favorited by current user
+    let userFavoritesIds: number[] = [];
+
+    if (currentUserId) {
+      const currentUser = await this.userRepository.findOne({
+        where: { id: currentUserId },
+        relations: ['favorites'],
+      });
+
+      userFavoritesIds = currentUser
+        ? currentUser.favorites.map((article) => article.id)
+        : [];
+    }
+
+    const articlesWithFavorited = articles.map((article) => ({
+      ...article,
+      favorited: userFavoritesIds.includes(article.id),
+    }));
+
+    return { articles: articlesWithFavorited, articlesCount };
   }
 
   async createArticle(
