@@ -18,6 +18,7 @@ import UpdateBlog from "./pages/UpdateBlog";
 import ShowBlog from "./pages/ShowBlog";
 import ForgetPassword from "./pages/ForgetPassword";
 import Home from "./pages/Home";
+import Profile from "./pages/Profile";
 
 import ScrollToTop from "./components/ScrollToTop";
 import Search from "./components/Search";
@@ -33,12 +34,13 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/home" element={<Home />} />
+              <Route path="/profile" element={<Profile />} />
 
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/blog/:blogSlug" element={<ShowBlog />} />
+              <Route path="/blog/:slug" element={<ShowBlog />} />
               <Route path="/search" element={<Search />} />
               <Route path="/forget-password" element={<ForgetPassword />} />
               <Route path="/dashboard" element={<Dashboard />} />

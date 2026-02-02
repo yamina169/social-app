@@ -28,12 +28,12 @@ export class ArticleService {
       .createQueryBuilder('articles')
       .leftJoinAndSelect('articles.author', 'author');
 
-    // Filter by tag
+    // Filtrer par tag
     if (tag) {
       queryBuilder.andWhere('articles.tagList LIKE :tag', { tag: `%${tag}%` });
     }
 
-    // Filter by author
+    // Filtrer par auteur
     if (author) {
       const authorEntity = await this.userRepository.findOne({
         where: { username: author },
@@ -42,7 +42,7 @@ export class ArticleService {
       queryBuilder.andWhere('articles.authorId = :id', { id: authorEntity.id });
     }
 
-    // Filter by favorited
+    // Filtrer par favorited
     if (favorited) {
       const user = await this.userRepository.findOne({
         where: { username: favorited },
@@ -54,7 +54,7 @@ export class ArticleService {
       queryBuilder.andWhere('articles.id IN (:...ids)', { ids: favoriteIds });
     }
 
-    // Filter by search (title or description)
+    // Filtrer par recherche (title ou description)
     if (search) {
       queryBuilder.andWhere(
         '(articles.title LIKE :search OR articles.description LIKE :search)',
@@ -62,23 +62,24 @@ export class ArticleService {
       );
     }
 
+    // Trier par date de création décroissante
     queryBuilder.orderBy('articles.createdAt', 'DESC');
 
-    const articlesCount = await queryBuilder.getCount();
-
+    // Pagination
     if (limit) queryBuilder.take(Number(limit));
     if (offset) queryBuilder.skip(Number(offset));
 
+    const articlesCount = await queryBuilder.getCount();
     const articles = await queryBuilder.getMany();
 
-    // Replace presigned URLs with direct public URLs
+    // Convertir les images en URL publiques
     for (const article of articles) {
       if (article.image) {
         article.image = `http://localhost:9000/articles/${article.image}`;
       }
     }
 
-    // Handle current user's favorites
+    // Marquer les articles favoris de l'utilisateur actuel
     let userFavoritesIds: number[] = [];
     if (currentUserId) {
       const currentUser = await this.userRepository.findOne({
@@ -97,7 +98,6 @@ export class ArticleService {
 
     return { articles: articlesWithFavorited, articlesCount };
   }
-
   async createArticle(
     user: UserEntity,
     createArticleDto: CreateArticleDto,
@@ -253,22 +253,36 @@ export class ArticleService {
     slug: string,
     currentUserId: number,
   ): Promise<{ message: string }> {
+    // Récupérer l'article avec son auteur et ses commentaires
     const article = await this.articleRepository.findOne({
       where: { slug },
-      relations: ['author'],
+      relations: ['author', 'comments'], // <- ajouter comments
     });
+
     if (!article)
       throw new HttpException('Article not found', HttpStatus.NOT_FOUND);
+
     if (article.author.id !== currentUserId)
       throw new HttpException('Not author', HttpStatus.FORBIDDEN);
 
-    // delete image from MinIO if exists
+    // Supprimer les commentaires associés si existants
+    if (article.comments && article.comments.length > 0) {
+      await Promise.all(
+        article.comments.map(
+          (comment) => this.articleRepository.manager.remove(comment), // ou repository de Comment si séparé
+        ),
+      );
+    }
+
+    // Supprimer l'image du MinIO si elle existe
     if (article.image) {
       await this.minioService.deleteObject('articles', article.image);
     }
 
+    // Supprimer l'article
     await this.articleRepository.delete({ slug });
-    return { message: 'Article deleted successfully' };
+
+    return { message: 'Article and its comments deleted successfully' };
   }
 
   // ------------------ Helpers ------------------

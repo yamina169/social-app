@@ -97,7 +97,6 @@ export class ArticleService {
 
     return { articles: articlesWithFavorited, articlesCount };
   }
-
   async createArticle(
     user: UserEntity,
     createArticleDto: CreateArticleDto,

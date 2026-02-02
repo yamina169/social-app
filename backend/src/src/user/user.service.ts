@@ -104,7 +104,7 @@ export class UserService {
       email: user.email,
     };
 
-    return sign(payload, jwtSecret, { expiresIn: '1h' });
+    return sign(payload, jwtSecret, { expiresIn: '24h' });
   }
 
   generateUserResponse(user: UserEntity): IUserResponse {

@@ -30,54 +30,55 @@ const BlogList = ({ articles, onToggleFavorite }) => {
         const created = formatDateTime(blog.createdAt);
         const updated = formatDateTime(blog.updatedAt);
 
-        // Choisir la date à afficher
         const displayDate =
           updated && updated !== created
             ? `Updated: ${updated}`
             : `Created: ${created}`;
 
+        // Vérifier si l'image est valide
+        const hasImage = blog.image && blog.image.trim() !== "";
+
         return (
           <Link
             to={`/blog/${blog.slug}`}
             key={blog.id}
-            className="relative flex flex-col md:flex-row-reverse bg-white rounded-xl shadow-md overflow-hidden transition-transform hover:scale-105"
+            className="relative flex flex-col md:flex-row-reverse bg-white rounded-xl shadow-md overflow-hidden transition-transform hover:scale-105 md:h-48"
+            // md:h-48 : hauteur fixe sur desktop pour que l'image ait une référence
           >
-            {/* Image à droite */}
-            <div className="md:w-1/3 h-48 md:h-auto bg-gray-200 flex-shrink-0">
-              <img
-                src={
-                  blog.image && blog.image !== ""
-                    ? blog.image
-                    : "/placeholder.png"
-                }
-                alt={blog.title}
-                className="w-full h-full object-cover"
-                loading="lazy"
-                onError={(e) => (e.currentTarget.src = "/placeholder.png")}
-              />
-            </div>
+            {/* Image à droite uniquement si valide */}
+            {hasImage && (
+              <div className="md:w-1/4 h-full flex-shrink-0">
+                <img
+                  src={blog.image}
+                  alt={blog.title}
+                  className="w-full h-full object-cover rounded-r-xl"
+                  loading="lazy"
+                  onError={(e) => e.currentTarget.parentElement.remove()}
+                />
+              </div>
+            )}
 
             {/* Contenu */}
-            <div className="p-6 flex flex-col justify-between md:w-2/3">
+            <div
+              className={`p-6 flex flex-col justify-between ${
+                hasImage ? "md:w-3/4" : "w-full"
+              }`}
+            >
               <div>
-                {/* Titre */}
                 <h2 className="text-2xl font-bold mb-2 line-clamp-2">
                   {blog.title}
                 </h2>
 
-                {/* Description */}
                 <p className="text-gray-700 mb-2 line-clamp-3">
                   {blog.description ||
                     (blog.body ? blog.body.substring(0, 120) + "..." : "")}
                 </p>
 
-                {/* Date + heure avec icône */}
                 <div className="flex items-center text-gray-500 text-sm mb-4 gap-1">
                   <FaClock className="text-gray-400" />
                   <span>{displayDate}</span>
                 </div>
 
-                {/* Tags */}
                 <div className="flex flex-wrap gap-2">
                   {blog.tagList?.map((tag, index) => (
                     <span

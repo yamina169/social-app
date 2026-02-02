@@ -39,42 +39,30 @@ export class CommentService {
 
     return this.generateCommentResponse(savedComment);
   }
-
   async getComments(
     slug: string,
-    query: { limit?: string; offset?: string } = {},
+    query: { take?: number; skip?: number } = {},
   ): Promise<ICommentsResponse> {
-    const article = await this.articleRepository.findOne({
-      where: { slug },
-    });
+    // Récupérer l'article par son slug
+    const article = await this.articleRepository.findOne({ where: { slug } });
 
     if (!article) {
       throw new HttpException('Article not found', HttpStatus.NOT_FOUND);
     }
 
-    const { limit, offset } = query;
+    const { take, skip } = query;
 
-    const take = limit !== undefined ? Number(limit) : undefined;
-    const skip = offset !== undefined ? Number(offset) : undefined;
-
-    // Build query with optional pagination
-    const queryBuilder = this.commentRepository
+    // Récupérer les commentaires liés à l'article
+    const [comments, total] = await this.commentRepository
       .createQueryBuilder('comment')
       .leftJoinAndSelect('comment.author', 'author')
       .where('comment.articleId = :articleId', { articleId: article.id })
-      .orderBy('comment.createdAt', 'DESC');
+      .orderBy('comment.createdAt', 'DESC') // Tri par date décroissante
+      .skip(skip ?? 0) // Pagination
+      .take(take ?? undefined)
+      .getManyAndCount();
 
-    if (typeof take === 'number' && !isNaN(take)) {
-      queryBuilder.take(take);
-    }
-
-    if (typeof skip === 'number' && !isNaN(skip)) {
-      queryBuilder.skip(skip);
-    }
-
-    const comments = await queryBuilder.getMany();
-
-    return this.generateCommentsResponse(comments);
+    return { comments, total };
   }
 
   async deleteComment(

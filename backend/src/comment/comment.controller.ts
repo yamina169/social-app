@@ -33,19 +33,29 @@ import { UserEntity } from '../user/user.entity';
 @Controller('articles')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
-
   @Get(':slug/comments')
-  @ApiOperation({ summary: 'Get all comments for an article' })
+  @ApiOperation({ summary: 'Get all comments for an article with pagination' })
   @ApiParam({ name: 'slug', description: 'Slug of the article' })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'offset', required: false })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of comments to return',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    description: 'Number of comments to skip',
+  })
   async getComments(
     @Param('slug') slug: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ): Promise<ICommentsResponse> {
-    const query = { limit, offset };
-    return await this.commentService.getComments(slug, query);
+    // Convert query params to numbers
+    const take = limit ? Number(limit) : undefined;
+    const skip = offset ? Number(offset) : undefined;
+
+    return await this.commentService.getComments(slug, { take, skip });
   }
 
   @Post(':slug/comments')
