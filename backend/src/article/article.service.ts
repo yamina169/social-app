@@ -1,4 +1,3 @@
-// Remplacement des imports avec la bonne syntaxe et chemins relatifs
 import { ArticleEntity } from '../article/article.entity';
 import { CreateArticleDto } from './dto/createArticle.dto';
 import { UserEntity } from '../user/user.entity';
@@ -10,6 +9,7 @@ import slugify from 'slugify';
 import { UpdateArticleDto } from './dto/updateArticle.dto';
 import { IArticlesResponse } from './types/articlesResponse.interface';
 import { MinioService } from '@/minio/minio.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class ArticleService {
@@ -18,7 +18,7 @@ export class ArticleService {
     private readonly articleRepository: Repository<ArticleEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-
+    private readonly aiService: AiService,
     private readonly minioService: MinioService,
   ) {}
   async findAll(currentUserId: number, query: any): Promise<IArticlesResponse> {
@@ -293,5 +293,26 @@ export class ArticleService {
 
   generateArticleResponse(article: ArticleEntity): IArticleResponse {
     return { article };
+  }
+
+  // ------------------ AI Temporary Article ------------------
+  async generateTempArticle(prompt: string): Promise<ArticleEntity> {
+    // Générer le texte depuis AI
+    const generatedText = await this.aiService.generateText(prompt);
+
+    // Créer un objet ArticleEntity en mémoire (non sauvegardé)
+    const article = new ArticleEntity();
+    article.title = prompt.slice(0, 50) || 'Generated Article';
+    article.slug = this.generateSlug(article.title);
+    article.body = generatedText;
+    article.description = generatedText.slice(0, 150);
+    article.tagList = [];
+
+    return article;
+  }
+
+  async summarizeTempArticle(body: string): Promise<string> {
+    // Résumer un texte via AI
+    return this.aiService.summarizeText(body);
   }
 }

@@ -8,6 +8,12 @@ services:
     depends_on:
       - postgres
       - minio
+      - localai
+    environment:
+      # URL d'appel pour LocalAI depuis backend
+      AI_BASE_URL: http://localai:8080
+    networks:
+      - blog-net
 
   frontend:
     build: ./frontend
@@ -17,6 +23,8 @@ services:
       - ./frontend/.env
     depends_on:
       - backend
+    networks:
+      - blog-net
 
   postgres:
     image: postgres:16-alpine
@@ -28,6 +36,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "${DB_PORT:-5432}:5432"
+    networks:
+      - blog-net
 
   minio:
     image: minio/minio
@@ -38,9 +48,31 @@ services:
     volumes:
       - minio_data:/data
     ports:
-      - "9000:9000" # API
-      - "9001:9001" # Console Web
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - blog-net
+
+  localai:
+    image: localai/localai:latest-cpu
+    container_name: localai
+    restart: unless-stopped
+    volumes:
+      - localai_models:/models
+    ports:
+      - "8081:8080" # expose LocalAI sur le port 8081 de ton PC pour Postman
+    environment:
+      MODELS_PATH: /models
+      MODEL_URLS: >
+        https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
+    networks:
+      - blog-net
 
 volumes:
   postgres_data:
   minio_data:
+  localai_models:
+
+networks:
+  blog-net:
+    driver: bridge

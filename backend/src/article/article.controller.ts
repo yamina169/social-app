@@ -1,3 +1,5 @@
+import { AiService } from '../ai/ai.service';
+import { AiRequestDto } from '../ai/dto/AiRequest.dto';
 import {
   Body,
   Controller,
@@ -12,14 +14,14 @@ import {
   Delete,
   Put,
   Query,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiBody,
-  ApiResponse,
   ApiParam,
-  ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -37,7 +39,10 @@ import { AuthGuard } from '@/user/guards/auth.guard';
 @ApiTags('Articles')
 @Controller('articles')
 export class ArticleController {
-  constructor(private readonly articleService: ArticleService) {}
+  constructor(
+    private readonly articleService: ArticleService,
+    private readonly aiService: AiService,
+  ) {}
   @Post()
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe())
@@ -155,5 +160,24 @@ export class ArticleController {
       slug,
     );
     return this.articleService.generateArticleResponse(removedArticle);
+  }
+
+  // ---------------- AI Endpoints ----------------
+  @Post('ai/generate-temp')
+  async generateTempArticle(@Body() dto: AiRequestDto) {
+    if (!dto.prompt) {
+      throw new HttpException('Prompt is required', HttpStatus.BAD_REQUEST);
+    }
+    const article = await this.articleService.generateTempArticle(dto.prompt);
+    return { article };
+  }
+
+  @Post('ai/summarize-temp')
+  async summarizeTempArticle(@Body() dto: AiRequestDto) {
+    if (!dto.text) {
+      throw new HttpException('Text is required', HttpStatus.BAD_REQUEST);
+    }
+    const summary = await this.articleService.summarizeTempArticle(dto.text);
+    return { summary };
   }
 }

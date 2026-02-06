@@ -22,21 +22,18 @@ const Header = () => {
       }
     };
 
-    loadUser(); // au premier chargement
-    window.addEventListener("storage", loadUser); // sync si changement
+    loadUser();
+    window.addEventListener("storage", loadUser);
 
     return () => window.removeEventListener("storage", loadUser);
   }, []);
 
-  // 🚪 Logout
   const signOutHandle = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     setUser(null);
     setToggleNavBtn(false);
     navigate("/login");
-
-    // Notifier les autres composants
     window.dispatchEvent(new Event("storage"));
   };
 
@@ -46,7 +43,7 @@ const Header = () => {
   return (
     <nav className="sticky top-0 z-20 bg-gradient-to-r from-indigo-500 via-purple-400 to-blue-400 shadow-md">
       <div className="container mx-auto flex justify-between items-center px-6 py-4">
-        {/* Logo */}
+        {/* Logo + Home/Explore */}
         <div className="flex items-center gap-4">
           <NavLink to="/" className="flex items-center">
             <h1 className="text-lg font-bold text-white">Tech</h1>
@@ -55,22 +52,12 @@ const Header = () => {
             </span>
           </NavLink>
 
-          {/* Home ou Explore */}
-          {user ? (
-            <NavLink
-              to="/home"
-              className="text-white font-semibold px-3 py-2 rounded-md hover:bg-white/20 transition"
-            >
-              Home
-            </NavLink>
-          ) : (
-            <NavLink
-              to="/"
-              className="text-white font-semibold px-3 py-2 rounded-md hover:bg-white/20 transition"
-            >
-              Explore
-            </NavLink>
-          )}
+          <NavLink
+            to={user ? "/home" : "/"}
+            className="text-white font-semibold px-3 py-2 rounded-md hover:bg-white/20 transition"
+          >
+            {user ? "Home" : "Explore"}
+          </NavLink>
         </div>
 
         {/* Desktop Menu */}
@@ -129,7 +116,7 @@ const Header = () => {
         </div>
       </div>
 
-      {/* 📱 Mobile Menu */}
+      {/* Mobile Menu */}
       {toggleNavBtn && (
         <div className="md:hidden bg-gradient-to-r from-blue-400 via-gray-300 to-blue-500 flex flex-col items-center gap-4 py-6">
           <NavLink
